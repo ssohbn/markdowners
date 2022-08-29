@@ -17,16 +17,34 @@ fn read_file(path: &str) -> String {
     contents
 }
 
-fn parse_markdown(line: &str) -> &str {
-    let re = Regex::new("[A-Za-z]").unwrap();
-    
-   let (start, text) = line.split_at(line.find(' ').unwrap());
+fn parse_markdown(line: &str) -> String {
 
-   if !re.is_match(start) {
-       // todo!("p tag")
-       println!("{}", start);
-   }
+    if !line.contains(' ') {
+        return "<br>".to_string();
+    }
 
+    let (start, text) = line.split_at(line.find(' ').unwrap());
+    let re = Regex::new("[A-Za-z]").unwrap(); 
 
-   return "temp"
+    // safe to say that non a-z is probably
+    // a tag of some sort
+    if !re.is_match(start) {
+        let first_thingy = start.get(0..1);
+        match first_thingy {
+            Some("#") => println!("header"),
+            Some(">") => println!("block quote"),
+            Some("-") => println!("unordered list"),
+            tingy if Regex::new("[0-9].").unwrap().is_match(tingy.unwrap()) => {
+                
+            }
+            Some("\t") =>  println!("code"),
+//           Some('0'..='9') => println!("ordered list"),
+
+            None => panic!("im not sure this is reachable"),
+            Some(_) => panic!("i think thhis is unreachable"),
+        }
+    }
+
+   return format!("<p>{}</p>", text);
 }
+
