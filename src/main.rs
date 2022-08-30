@@ -1,4 +1,5 @@
 static MD_PATH: &'static str = "md_file.md";
+static HTML_PATH: &'static str = "html_file.html";
 
 use std::fs;
 use regex::Regex;
@@ -7,9 +8,14 @@ fn main() {
     let lines = read_file(MD_PATH);
     let lines = lines.lines().map(|line| line.to_owned());
 
-    lines.for_each( |line| {
-        parse_markdown(&line);
-    });
+    // let mut file = std::fs::OpenOptions::new().append(true).open(HTML_PATH);
+
+    let mut tags: Vec<Tag> = Vec::new();
+    for line in lines {
+        let tag = parse_markdown(line);
+        println!("{:?}", &tag);
+        tags.push(tag);
+    }
 }
 
 fn read_file(path: &str) -> String {
@@ -17,10 +23,10 @@ fn read_file(path: &str) -> String {
     contents
 }
 
-fn parse_markdown(line: &str) -> String {
+fn parse_markdown(line: String) -> Tag {
 
     if !line.contains(' ') {
-        return "<br>".to_string();
+        return Tag::Break {  };
     }
 
     let (start, text) = line.split_at(line.find(' ').unwrap());
@@ -29,22 +35,45 @@ fn parse_markdown(line: &str) -> String {
     // safe to say that non a-z is probably
     // a tag of some sort
     if !re.is_match(start) {
-        let first_thingy = start.get(0..1);
-        match first_thingy {
-            Some("#") => println!("header"),
-            Some(">") => println!("block quote"),
-            Some("-") => println!("unordered list"),
-            tingy if Regex::new("[0-9].").unwrap().is_match(tingy.unwrap()) => {
-                
-            }
-            Some("\t") =>  println!("code"),
-//           Some('0'..='9') => println!("ordered list"),
+        let mut chars = start.chars();
 
-            None => panic!("im not sure this is reachable"),
-            Some(_) => panic!("i think thhis is unreachable"),
+        let first_thingy = chars.next().unwrap();
+        
+        let text = text.to_owned();
+        match first_thingy {
+            '#' => {
+                let mut the_juice = 1;
+                while chars.next().is_some() && chars.next() == Some('#') {
+                    the_juice += 1;
+                }
+                return Tag::Header { text, number: the_juice};
+            },
+            '>' => {
+                return Tag::BlockComment { text };
+            },
+            '-' => {
+                return Tag::UnorderedListItem { text }
+            },
+            thingy if ('0'..'9').any(|n| n == thingy) => {
+                return Tag::OrderedListItem { text, index: start.parse().unwrap() }
+            },
+            '\t' => return Tag::Code{ text },
+
+            _ => return Tag::Paragraph{ text },
         }
     }
-
-   return format!("<p>{}</p>", text);
+    return Tag::Header { text: "hello".to_owned(), number: 6 }
 }
+
+#[derive(Debug)]
+pub enum Tag {
+    BlockComment{text: String},
+    Header{text: String, number: u8},
+    UnorderedListItem{text: String},
+    OrderedListItem{text: String, index: u8},
+    Code{text: String},
+    Paragraph{text: String},
+    Break{},
+}
+
 
