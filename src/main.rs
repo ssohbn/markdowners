@@ -59,7 +59,7 @@ fn parse_markdown(line: String) -> Tag {
                 return Tag::OrderedListItem { text, index: number.parse().unwrap() }
             },
 
-            // this is an error waiting to happen
+            // this is an error waiting to happen. i do not want to fix it.
             '\\' => return Tag::Code{ text },
 
             _ => panic!("not gonna happen"),
