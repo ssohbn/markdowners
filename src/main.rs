@@ -149,11 +149,13 @@ pub enum Tag {
 }
 
 #[cfg(test)]
-mod tests {
-    #[test]
-    fn test_work() {
-        assert_eq!(2+2, 4);
+pub mod tests {
+    use crate::*;
+    fn header_test() {
+        todo!("make the tests!!!!!");
+        header();
     }
+
 }
 
 
