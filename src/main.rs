@@ -131,7 +131,7 @@ fn parse_markdown(line: String) -> Tag {
 
 fn header(chars: &mut std::iter::Peekable<std::str::Chars>, text: String) -> Tag {
     let mut the_juice = 1;
-    while chars.peek().is_some() && chars.next() == Some('#') {
+    while chars.next() == Some('#')  && chars.peek().is_some() {
         the_juice += 1;
     }
     return Tag::Header { text, number: the_juice};
@@ -151,12 +151,57 @@ pub enum Tag {
 #[cfg(test)]
 pub mod tests {
     use crate::*;
+
+    #[test]
     fn header_test() {
-        todo!("make the tests!!!!!");
-        header();
+        let markdown_line = "# line".to_string();
+        let (start, text) = markdown_line.split_at(markdown_line.find(' ').unwrap());
+        let tag = header(&mut start.chars().peekable(), text.to_string());
+
+        if let Tag::Header {text: _, number} = tag {
+            assert_eq!(number, 1)
+        }
+
+        let markdown_line = "## line".to_string();
+        let (start, text) = markdown_line.split_at(markdown_line.find(' ').unwrap());
+        let tag = header(&mut start.chars().peekable(), text.to_string());
+
+        if let Tag::Header {text: _, number} = tag {
+            assert_eq!(number, 2)
+        }
+
+        let markdown_line = "### line".to_string();
+        let (start, text) = markdown_line.split_at(markdown_line.find(' ').unwrap());
+        let tag = header(&mut start.chars().peekable(), text.to_string());
+
+        if let Tag::Header {text: _, number} = tag {
+            assert_eq!(number, 3)
+        }
+
+        let markdown_line = "#### line".to_string();
+        let (start, text) = markdown_line.split_at(markdown_line.find(' ').unwrap());
+        let tag = header(&mut start.chars().peekable(), text.to_string());
+
+        if let Tag::Header {text: _, number} = tag {
+            assert_eq!(number, 4)
+        }
+
+        let markdown_line = "##### line".to_string();
+        let (start, text) = markdown_line.split_at(markdown_line.find(' ').unwrap());
+        let tag = header(&mut start.chars().peekable(), text.to_string());
+
+        if let Tag::Header {text: _, number} = tag {
+            assert_eq!(number, 5)
+        }
+
+        let markdown_line = "###### line".to_string();
+        let (start, text) = markdown_line.split_at(markdown_line.find(' ').unwrap());
+        let tag = header(&mut start.chars().peekable(), text.to_string());
+
+        if let Tag::Header {text: _, number} = tag {
+            assert_eq!(number, 6)
+        }
     }
-
 }
-
 
 
