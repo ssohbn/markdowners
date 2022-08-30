@@ -13,9 +13,70 @@ fn main() {
     let mut tags: Vec<Tag> = Vec::new();
     for line in lines {
         let tag = parse_markdown(line);
-        println!("{:?}", &tag);
+//        println!("{:?}", &tag);
         tags.push(tag);
     }
+    let output = parse_tags(tags);
+    println!("the output: {}", output);
+}
+
+fn parse_tags(tags: Vec<Tag>) -> String {
+    let mut output: Vec<String> = Vec::new();
+    let mut p_tags = tags.iter().peekable();
+    while p_tags.peek().is_some() {
+        let in_block = false;
+        match p_tags.next().unwrap() {
+            Tag::BlockComment { text } => output.push(format!("<blockquote>{}</blockquote>", text).to_string()),
+            Tag::Break {  } => output.push("<br>".to_string()),
+            Tag::Header { text, number } => output.push(format!("<h{}>{}</h{}>", number, text, number).to_string()),
+            Tag::Code { text } => {
+                let mut code: String = String::new();
+
+                if !in_block {
+                    code.push_str("<pre><code>");
+                }
+                code.push_str(text);
+
+                if !matches!(p_tags.peek(), Some(&Tag::Code{text: _})) {
+                    code.push_str("</pre></code>");
+                }
+
+                output.push(code);
+                },
+                Tag::Paragraph { text } => output.push(format!("<p>{}</p>", text)),
+                Tag::OrderedListItem { text, index } => {
+                let mut ol: String = String::new();
+
+                if !in_block {
+                    ol.push_str("<ol>");
+                }
+                ol.push_str(&format!("<li>{}<li>", text));
+
+                if !matches!(p_tags.peek(), Some(&Tag::Code{text: _})) {
+                    ol.push_str("</ol>");
+                }
+
+                output.push(ol);
+
+                },
+                Tag::UnorderedListItem{ text } => {
+                let mut ul: String = String::new();
+
+                if !in_block {
+                    ul.push_str("<ul>");
+                }
+                ul.push_str(text);
+
+                if !matches!(p_tags.peek(), Some(&Tag::Code{text: _})) {
+                    ul.push_str("</ul>");
+                }
+
+                output.push(ul);
+                },
+            }
+        }
+
+    output.join("\n")
 }
 
 fn read_file(path: &str) -> String {
