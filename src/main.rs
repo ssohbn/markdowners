@@ -45,6 +45,7 @@ fn parse_tags(tags: Vec<Tag>) -> String {
                 },
                 Tag::Paragraph { text } => output.push(format!("<p>{}</p>", text)),
                 Tag::OrderedListItem { text, index } => {
+                    todo!("this dont work");
                 let mut ol: String = String::new();
 
                 if !in_block {
@@ -60,6 +61,7 @@ fn parse_tags(tags: Vec<Tag>) -> String {
 
                 },
                 Tag::UnorderedListItem{ text } => {
+                    todo!("this dont work");
                 let mut ul: String = String::new();
 
                 if !in_block {
@@ -96,18 +98,14 @@ fn parse_markdown(line: String) -> Tag {
     // safe to say that non a-z is probably
     // a tag of some sort
     if !re.is_match(start) {
-        let mut chars = start.chars();
+        let mut chars = start.chars().peekable();
 
         let first_thingy = chars.next().unwrap();
         
         let text = text.to_owned();
         match first_thingy {
             '#' => {
-                let mut the_juice = 1;
-                while chars.next().is_some() && chars.next() == Some('#') {
-                    the_juice += 1;
-                }
-                return Tag::Header { text, number: the_juice};
+                return header(&mut chars, text);
             },
             '>' => {
                 return Tag::BlockComment { text };
@@ -121,6 +119,7 @@ fn parse_markdown(line: String) -> Tag {
             },
 
             // this is an error waiting to happen. i do not want to fix it.
+            // post test: the error happened. i have to fix it.
             '\\' => return Tag::Code{ text },
 
             _ => panic!("not gonna happen"),
@@ -128,6 +127,14 @@ fn parse_markdown(line: String) -> Tag {
 
     }
     return Tag::Paragraph { text: line };
+}
+
+fn header(chars: &mut std::iter::Peekable<std::str::Chars>, text: String) -> Tag {
+    let mut the_juice = 1;
+    while chars.peek().is_some() && chars.next() == Some('#') {
+        the_juice += 1;
+    }
+    return Tag::Header { text, number: the_juice};
 }
 
 #[derive(Debug)]
@@ -140,5 +147,14 @@ pub enum Tag {
     Paragraph{text: String},
     Break{},
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_work() {
+        assert_eq!(2+2, 4);
+    }
+}
+
 
 
