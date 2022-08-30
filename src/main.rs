@@ -55,14 +55,18 @@ fn parse_markdown(line: String) -> Tag {
                 return Tag::UnorderedListItem { text }
             },
             thingy if ('0'..'9').any(|n| n == thingy) => {
-                return Tag::OrderedListItem { text, index: start.parse().unwrap() }
+                let (number, _) = start.split_at(start.find(".").unwrap());
+                return Tag::OrderedListItem { text, index: number.parse().unwrap() }
             },
-            '\t' => return Tag::Code{ text },
 
-            _ => return Tag::Paragraph{ text },
+            // this is an error waiting to happen
+            '\\' => return Tag::Code{ text },
+
+            _ => panic!("not gonna happen"),
         }
+
     }
-    return Tag::Header { text: "hello".to_owned(), number: 6 }
+    return Tag::Paragraph { text: line };
 }
 
 #[derive(Debug)]
