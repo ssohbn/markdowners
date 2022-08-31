@@ -24,59 +24,61 @@ fn parse_tags(tags: Vec<Tag>) -> String {
     let mut output: Vec<String> = Vec::new();
     let mut p_tags = tags.iter().peekable();
 
+    let mut in_block = false;
     while p_tags.peek().is_some() {
-//        let in_block = false;
         match p_tags.next().unwrap() {
             Tag::BlockComment { text } => output.push(format!("<blockquote>{}</blockquote>", text).to_string()),
             Tag::Break {  } => output.push("<br>".to_string()),
             Tag::Header { text, number } => output.push(format!("<h{}>{}</h{}>", number, text, number).to_string()),
             Tag::Paragraph { text } => output.push(format!("<p>{}</p>", text)),
-//             Tag::Code { text } => {
-//                 let mut code: String = String::new();
-// 
-//                 if !in_block {
-//                     code.push_str("<pre><code>");
-//                 }
-//                 code.push_str(&text);
-// 
-//                 if !matches!(p_tags.peek(), Some(&Tag::Code{text: _})) {
-//                     code.push_str("</pre></code>");
-//                 }
-// 
-//                 output.push(code);
-//                 },
-//                 Tag::OrderedListItem { text, index } => {
-//                     todo!("this dont work");
-//                 let mut ol: String = String::new();
-// 
-//                 if !in_block {
-//                     ol.push_str("<ol>");
-//                 }
-//                 ol.push_str(&format!("<li>{}<li>", text));
-// 
-//                 if !matches!(p_tags.peek(), Some(&Tag::Code{text: _})) {
-//                     ol.push_str("</ol>");
-//                 }
-// 
-//                 output.push(ol);
-// 
-//                 },
-//                 Tag::UnorderedListItem{ text } => {
-//                     todo!("this dont work");
-//                 let mut ul: String = String::new();
-// 
-//                 if !in_block {
-//                     ul.push_str("<ul>");
-//                 }
-//                 ul.push_str(text);
-// 
-//                 if !matches!(p_tags.peek(), Some(&Tag::Code{text: _})) {
-//                     ul.push_str("</ul>");
-//                 }
-// 
-//                 output.push(ul);
-//                 },
-            _ => {},
+            Tag::OrderedListItem { text, index } => {
+            let mut ol: String = String::new();
+
+            if !in_block {
+                ol.push_str("<ol>");
+                in_block = true;
+            }
+
+            ol.push_str(&format!("<li>{}.{}<li>", index, text));
+
+            if !matches!(p_tags.peek(), Some(&Tag::OrderedListItem{index: _, text: _})) {
+                ol.push_str("</ol>");
+                in_block = false;
+            }
+
+            output.push(ol);
+
+            },
+             Tag::Code { text } => {
+                 let mut code: String = String::new();
+ 
+                if !in_block {
+                    code.push_str("<pre><code>");
+                }
+                code.push_str(&text);
+ 
+                if !matches!(p_tags.peek(), Some(&Tag::Code{text: _})) {
+                    code.push_str("</pre></code>");
+                }
+
+                output.push(code);
+                },
+                Tag::UnorderedListItem{ text } => {
+                let mut ul: String = String::new();
+
+                if !in_block {
+                    ul.push_str("<ul>");
+                    in_block = true;
+                }
+                ul.push_str(&format!("<li>{}<li>", text));
+
+                if !matches!(p_tags.peek(), Some(&Tag::UnorderedListItem{text: _})) {
+                    ul.push_str("</ul>");
+                    in_block = false;
+                }
+
+                output.push(ul);
+                },
             }
         }
 
