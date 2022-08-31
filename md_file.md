@@ -1,6 +1,11 @@
-# Markdown header
+# h1
+## h2
+### h3
+#### h4
+##### h5
+###### h6
+### p tag
 this is a very cool markdown file
-
 
 ul stuff
 - ul item
@@ -23,12 +28,6 @@ ul stuff
 
 > more block quote
 
-> # h1
-## h2
-### h3
-#### h4
-##### h5
-###### h6 and an ordered list
 1. item 1
 2. item 2
 3. another itmem

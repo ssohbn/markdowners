@@ -1,5 +1,5 @@
-static MD_PATH: &'static str = "md_file.md";
-static HTML_PATH: &'static str = "html_file.html";
+static MD_PATH: &'static str = "./md_file.md";
+static HTML_PATH: &'static str = "./html_file.html";
 
 use std::fs;
 use regex::Regex;
@@ -17,7 +17,7 @@ fn main() {
         tags.push(tag);
     }
     let output = parse_tags(tags);
-    println!("the output: {}", output);
+    fs::write(HTML_PATH, &output).expect("couldnt write to file");
 }
 
 fn parse_tags(tags: Vec<Tag>) -> String {
@@ -49,40 +49,45 @@ fn parse_tags(tags: Vec<Tag>) -> String {
             output.push(ol);
 
             },
-             Tag::Code { text } => {
-                 let mut code: String = String::new();
+            Tag::Code { text } => {
+                let mut code: String = String::new();
  
-                if !in_block {
-                    code.push_str("<pre><code>");
-                }
-                code.push_str(&text);
+               if !in_block {
+                   code.push_str("<pre><code>");
+               }
+               code.push_str(&text);
  
-                if !matches!(p_tags.peek(), Some(&Tag::Code{text: _})) {
-                    code.push_str("</pre></code>");
-                }
+               if !matches!(p_tags.peek(), Some(&Tag::Code{text: _})) {
+                   code.push_str("</pre></code>");
+               }
 
-                output.push(code);
-                },
-                Tag::UnorderedListItem{ text } => {
-                let mut ul: String = String::new();
-
-                if !in_block {
-                    ul.push_str("<ul>");
-                    in_block = true;
-                }
-                ul.push_str(&format!("<li>{}<li>", text));
-
-                if !matches!(p_tags.peek(), Some(&Tag::UnorderedListItem{text: _})) {
-                    ul.push_str("</ul>");
-                    in_block = false;
-                }
-
+               output.push(code);
+            },
+            Tag::UnorderedListItem{ text } => {
+                let ul = unordered_list(in_block, &text, &p_tags);
                 output.push(ul);
-                },
+            },
             }
         }
 
     output.join("\n")
+}
+
+fn unordered_list(in_block: bool, text: &str, p_tags: &std::iter::Peekable<std::slice::Iter<Tag>>) {
+    let mut ul: String = String::new();
+
+    if !in_block {
+        ul.push_str("<ul>");
+        in_block = true;
+    }
+
+    ul.push_str(&format!("<li>{}<li>", text.trim()));
+
+    if !matches!(p_tags.peek(), Some(&Tag::UnorderedListItem{text: _})) {
+        ul.push_str("</ul>");
+        in_block = false;
+    }
+
 }
 
 fn read_file(path: &str) -> String {
@@ -92,7 +97,7 @@ fn read_file(path: &str) -> String {
 
 fn parse_markdown(line: String) -> Tag {
 
-    if !line.contains(' ') {
+    if !line.contains(' ') { // should actually just check if it is empty.
         // this is going to error soon enough
         return Tag::Break {  };
     }
