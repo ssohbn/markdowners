@@ -91,6 +91,7 @@ fn read_file(path: &str) -> String {
 fn parse_markdown(line: String) -> Tag {
 
     if !line.contains(' ') {
+        // this is going to error soon enough
         return Tag::Break {  };
     }
 
@@ -102,14 +103,13 @@ fn parse_markdown(line: String) -> Tag {
     if !re.is_match(start) {
         let mut chars = start.chars().peekable();
 
-        println!("{:?}", chars);
         let first_thingy = chars.peek().unwrap();
-        println!("{}", first_thingy);
         
         let text = text.to_owned();
         match first_thingy {
             '#' => {
-                println!("{:?}{:?}", chars, text);
+                println!("{}",chars.size_hint().1.unwrap());
+                println!("{:?}", chars);
                 return header(&mut chars, text);
             },
             '>' => {
