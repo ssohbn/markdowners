@@ -12,7 +12,7 @@ It takes a simple Markdown file and turn it to html tags, so I can write less HT
     -m, --md-path <MD_PATH>
 
 # Stuff that would be cool that I do not have
-[ ] Bold
-[ ] Italic
-[ ] Italic-bold
-^^ these checkboxes
+- Bold
+- Italic
+- Italic-bold
+- checkboxes
