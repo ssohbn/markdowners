@@ -1,219 +1,234 @@
 static MD_PATH: &'static str = "./md_file.md";
 static HTML_PATH: &'static str = "./html_file.html";
 
-use std::fs;
 use regex::Regex;
+use std::fs;
 
 fn main() {
-    let lines = read_file(MD_PATH);
-    let lines = lines.lines().map(|line| line.to_owned());
+	// let mut file = std::fs::OpenOptions::new().append(true).open(HTML_PATH);
 
-    // let mut file = std::fs::OpenOptions::new().append(true).open(HTML_PATH);
+	let tags = parse_markdown(MD_PATH);
+	let output = parse_tags(tags);
+    let start = "
+<html>
+<head></head>
+<body>";
 
-    let mut tags: Vec<Tag> = Vec::new();
-    for line in lines {
-        let tag = parse_markdown(line);
-//        println!("{:?}", &tag);
-        tags.push(tag);
-    }
-    let output = parse_tags(tags);
-    fs::write(HTML_PATH, &output).expect("couldnt write to file");
+    let end = "
+</body>
+</html>
+        ";
+
+	fs::write(HTML_PATH, output).expect("couldnt write to file");
 }
 
 fn parse_tags(tags: Vec<Tag>) -> String {
-    let mut output: Vec<String> = Vec::new();
-    let mut p_tags = tags.iter().peekable();
+	let mut output: Vec<String> = Vec::new();
+	let mut p_tags = tags.iter().peekable();
 
-    let mut in_block = false;
-    while p_tags.peek().is_some() {
-        match p_tags.next().unwrap() {
-            Tag::BlockComment { text } => output.push(format!("<blockquote>{}</blockquote>", text).to_string()),
-            Tag::Break {  } => output.push("<br>".to_string()),
-            Tag::Header { text, number } => output.push(format!("<h{}>{}</h{}>", number, text, number).to_string()),
-            Tag::Paragraph { text } => output.push(format!("<p>{}</p>", text)),
-            Tag::OrderedListItem { text, index } => {
-            let mut ol: String = String::new();
+	let mut in_block = false;
+	while p_tags.peek().is_some() {
+		match p_tags.next().unwrap() {
+			Tag::BlockComment { text } => {
+				output.push(format!("<blockquote>{}</blockquote>", text).to_string())
+			},
+			Tag::Break {} => output.push("<br>".to_string()),
+			Tag::Header { text, number } => {
+				output.push(format!("<h{}>{}</h{}>", number, text, number).to_string())
+			},
+			Tag::Paragraph { text } => output.push(format!("<p>{}</p>", text)),
+			Tag::OrderedListItem { text } => {
+				let mut ol: String = String::new();
 
-            if !in_block {
-                ol.push_str("<ol>");
-                in_block = true;
-            }
+				if !in_block {
+					ol.push_str("<ol>");
+					in_block = true;
+				}
 
-            ol.push_str(&format!("<li>{}.{}<li>", index, text));
+				ol.push_str(&format!("<li>{}</li>", text));
 
-            if !matches!(p_tags.peek(), Some(&Tag::OrderedListItem{index: _, text: _})) {
-                ol.push_str("</ol>");
-                in_block = false;
-            }
+				if !matches!(p_tags.peek(), Some(&Tag::OrderedListItem { text: _ })) {
+					ol.push_str("</ol>");
+					in_block = false;
+				}
 
-            output.push(ol);
+				output.push(ol);
+			},
+			Tag::Code { text } => {
+				let mut code: String = String::new();
 
-            },
-            Tag::Code { text } => {
-                let mut code: String = String::new();
- 
-               if !in_block {
-                   code.push_str("<pre><code>");
-               }
-               code.push_str(&text);
- 
-               if !matches!(p_tags.peek(), Some(&Tag::Code{text: _})) {
-                   code.push_str("</pre></code>");
-               }
+				if !in_block {
+					code.push_str("<pre><code>");
+				}
+				code.push_str(&text);
 
-               output.push(code);
-            },
-            Tag::UnorderedListItem{ text } => {
-                let ul = unordered_list(in_block, &text, &p_tags);
-                output.push(ul);
-            },
-            }
-        }
+				if !matches!(p_tags.peek(), Some(&Tag::Code { text: _ })) {
+					code.push_str("</pre></code>");
+				}
 
-    output.join("\n")
+				output.push(code);
+			},
+			Tag::UnorderedListItem { text } => {
+				let ul = unordered_list_html(&mut in_block, &text.trim(), &mut p_tags);
+
+				output.push(ul);
+			},
+		}
+	}
+	output.join("\n")
 }
 
-fn unordered_list(in_block: bool, text: &str, p_tags: &std::iter::Peekable<std::slice::Iter<Tag>>) {
-    let mut ul: String = String::new();
+fn unordered_list_html(
+	in_block: &mut bool,
+	text: &str,
+	p_tags: &mut std::iter::Peekable<std::slice::Iter<Tag>>,
+) -> String {
+	let mut ul: String = String::new();
 
-    if !in_block {
-        ul.push_str("<ul>");
-        in_block = true;
-    }
+	if !*in_block {
+		ul.push_str("<ul>");
+		*in_block = true;
+	}
 
-    ul.push_str(&format!("<li>{}<li>", text.trim()));
+	ul.push_str(&format!("<li>{}</li>", text));
 
-    if !matches!(p_tags.peek(), Some(&Tag::UnorderedListItem{text: _})) {
-        ul.push_str("</ul>");
-        in_block = false;
-    }
+	if !matches!(p_tags.peek(), Some(&Tag::UnorderedListItem { text: _ })) {
+		ul.push_str("</ul>");
+		*in_block = false;
+	}
 
+	ul
 }
 
 fn read_file(path: &str) -> String {
-    let contents = fs::read_to_string(path).expect("couldnt read file");
-    contents
+	let contents = fs::read_to_string(path).expect("couldnt read file");
+	contents
 }
 
-fn parse_markdown(line: String) -> Tag {
+fn parse_markdown(md_path: &str) -> Vec<Tag> {
+	let mut tags: Vec<Tag> = Vec::new();
+	let lines = read_file(MD_PATH);
+	let lines = lines.lines().map(|line| line.to_owned());
 
-    if !line.contains(' ') { // should actually just check if it is empty.
-        // this is going to error soon enough
-        return Tag::Break {  };
-    }
+	for line in lines {
+		if !line.contains(' ') {
+			// should actually just check if it is empty.
+			// this is going to error soon enough
+			tags.push(Tag::Break {});
+		} else {
+			let (start, text) = line.split_at(line.find(' ').expect("NO SPLIT BIG FAIL"));
+			let re = Regex::new("[A-Za-z]").unwrap();
 
-    let (start, text) = line.split_at(line.find(' ').unwrap());
-    let re = Regex::new("[A-Za-z]").unwrap(); 
+			// safe to say that non a-z is probably
+			// a tag of some sort
+			if !re.is_match(start) {
+				let mut chars = start.chars().peekable();
 
-    // safe to say that non a-z is probably
-    // a tag of some sort
-    if !re.is_match(start) {
-        let mut chars = start.chars().peekable();
+				let first_thingy = chars.peek().unwrap();
 
-        let first_thingy = chars.peek().unwrap();
-        
-        let text = text.to_owned();
-        match first_thingy {
-            '#' => {
-                println!("{}",chars.size_hint().1.unwrap());
-                println!("{:?}", chars);
-                return header(&mut chars, text);
-            },
-            '>' => {
-                return Tag::BlockComment { text };
-            },
-            '-' => {
-                return Tag::UnorderedListItem { text }
-            },
-            thingy if ('0'..'9').any(|n| &n == thingy) => {
-                let (number, _) = start.split_at(start.find(".").unwrap());
-                return Tag::OrderedListItem { text, index: number.parse().unwrap() }
-            },
+				let text = text.to_owned();
+				match first_thingy {
+					'#' => {
+						tags.push(header(&mut chars, text));
+					},
+					'>' => {
+						tags.push(Tag::BlockComment { text });
+					},
+					'-' => tags.push(Tag::UnorderedListItem { text }),
+					thingy if ('0'..'9').any(|n| &n == thingy) => {
+						let (number, _) = start.split_at(start.find(".").unwrap());
+						tags.push(Tag::OrderedListItem { text });
+					},
 
-            // this is an error waiting to happen. i do not want to fix it.
-            // post test: the error happened. i have to fix it.
-            '\\' => return Tag::Code{ text },
+					// this is an error waiting to happen. i do not want to fix it.
+					// post test: the error happened. i have to fix it.
+					'\\' => tags.push(Tag::Code { text }),
 
-            _ => panic!("not gonna happen"),
-        }
+					_ => panic!("not gonna happen"),
+				}
+			} else {
+				tags.push(Tag::Paragraph { text: line });
+			}
+		}
+	}
 
-    }
-    return Tag::Paragraph { text: line };
+	return tags;
 }
 
 fn header(chars: &mut std::iter::Peekable<std::str::Chars>, text: String) -> Tag {
-    let mut the_juice = 1;
-    while chars.next() == Some('#')  && chars.peek().is_some() {
-        the_juice += 1;
-    }
-    return Tag::Header { text, number: the_juice};
+	let mut the_juice = 1;
+	while chars.next() == Some('#') && chars.peek().is_some() {
+		the_juice += 1;
+	}
+	return Tag::Header {
+		text,
+		number: the_juice,
+	};
 }
 
 #[derive(Debug)]
 pub enum Tag {
-    BlockComment{text: String},
-    Header{text: String, number: u8},
-    UnorderedListItem{text: String},
-    OrderedListItem{text: String, index: u8},
-    Code{text: String},
-    Paragraph{text: String},
-    Break{},
+	BlockComment { text: String },
+	Header { text: String, number: u8 },
+	UnorderedListItem { text: String },
+	OrderedListItem { text: String },
+	Code { text: String },
+	Paragraph { text: String },
+	Break {},
 }
 
 #[cfg(test)]
 pub mod tests {
-    use crate::*;
+	use crate::*;
 
-    #[test]
-    fn header_test() {
-        let markdown_line = "# line".to_string();
-        let (start, text) = markdown_line.split_at(markdown_line.find(' ').unwrap());
-        let tag = header(&mut start.chars().peekable(), text.to_string());
+	#[test]
+	fn header_test() {
+		let markdown_line = "# line".to_string();
+		let (start, text) = markdown_line.split_at(markdown_line.find(' ').unwrap());
+		let tag = header(&mut start.chars().peekable(), text.to_string());
 
-        if let Tag::Header {text: _, number} = tag {
-            assert_eq!(number, 1)
-        }
+		if let Tag::Header { text: _, number } = tag {
+			assert_eq!(number, 1)
+		}
 
-        let markdown_line = "## line".to_string();
-        let (start, text) = markdown_line.split_at(markdown_line.find(' ').unwrap());
-        let tag = header(&mut start.chars().peekable(), text.to_string());
+		let markdown_line = "## line".to_string();
+		let (start, text) = markdown_line.split_at(markdown_line.find(' ').unwrap());
+		let tag = header(&mut start.chars().peekable(), text.to_string());
 
-        if let Tag::Header {text: _, number} = tag {
-            assert_eq!(number, 2)
-        }
+		if let Tag::Header { text: _, number } = tag {
+			assert_eq!(number, 2)
+		}
 
-        let markdown_line = "### line".to_string();
-        let (start, text) = markdown_line.split_at(markdown_line.find(' ').unwrap());
-        let tag = header(&mut start.chars().peekable(), text.to_string());
+		let markdown_line = "### line".to_string();
+		let (start, text) = markdown_line.split_at(markdown_line.find(' ').unwrap());
+		let tag = header(&mut start.chars().peekable(), text.to_string());
 
-        if let Tag::Header {text: _, number} = tag {
-            assert_eq!(number, 3)
-        }
+		if let Tag::Header { text: _, number } = tag {
+			assert_eq!(number, 3)
+		}
 
-        let markdown_line = "#### line".to_string();
-        let (start, text) = markdown_line.split_at(markdown_line.find(' ').unwrap());
-        let tag = header(&mut start.chars().peekable(), text.to_string());
+		let markdown_line = "#### line".to_string();
+		let (start, text) = markdown_line.split_at(markdown_line.find(' ').unwrap());
+		let tag = header(&mut start.chars().peekable(), text.to_string());
 
-        if let Tag::Header {text: _, number} = tag {
-            assert_eq!(number, 4)
-        }
+		if let Tag::Header { text: _, number } = tag {
+			assert_eq!(number, 4)
+		}
 
-        let markdown_line = "##### line".to_string();
-        let (start, text) = markdown_line.split_at(markdown_line.find(' ').unwrap());
-        let tag = header(&mut start.chars().peekable(), text.to_string());
+		let markdown_line = "##### line".to_string();
+		let (start, text) = markdown_line.split_at(markdown_line.find(' ').unwrap());
+		let tag = header(&mut start.chars().peekable(), text.to_string());
 
-        if let Tag::Header {text: _, number} = tag {
-            assert_eq!(number, 5)
-        }
+		if let Tag::Header { text: _, number } = tag {
+			assert_eq!(number, 5)
+		}
 
-        let markdown_line = "###### line".to_string();
-        let (start, text) = markdown_line.split_at(markdown_line.find(' ').unwrap());
-        let tag = header(&mut start.chars().peekable(), text.to_string());
+		let markdown_line = "###### line".to_string();
+		let (start, text) = markdown_line.split_at(markdown_line.find(' ').unwrap());
+		let tag = header(&mut start.chars().peekable(), text.to_string());
 
-        if let Tag::Header {text: _, number} = tag {
-            assert_eq!(number, 6)
-        }
-    }
+		if let Tag::Header { text: _, number } = tag {
+			assert_eq!(number, 6)
+		}
+	}
 }
-
-

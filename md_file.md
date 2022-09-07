@@ -4,7 +4,7 @@
 #### h4
 ##### h5
 ###### h6
-### p tag
+p tag
 this is a very cool markdown file
 
 ul stuff
@@ -21,17 +21,19 @@ ul stuff
 
 *only italic*
 
-**bold**
+**Bold** // this does not render??
 
-***italic and bold***
+***Italic and bold***
 
 
 > more block quote
 
+
 1. item 1
 2. item 2
-3. another itmem
+3. another item
 
+Awesome insane grammatically accurate sentence.
 
 > #
 `code`
