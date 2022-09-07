@@ -1,25 +1,15 @@
-static MD_PATH: &'static str = "./md_file.md";
-static HTML_PATH: &'static str = "./html_file.html";
-
 use regex::Regex;
 use std::fs;
+use clap::Parser;
+
 
 fn main() {
 	// let mut file = std::fs::OpenOptions::new().append(true).open(HTML_PATH);
+    let args = Args::parse();
 
-	let tags = parse_markdown(MD_PATH);
+	let tags = parse_markdown(&args.md_path);
 	let output = parse_tags(tags);
-    let start = "
-<html>
-<head></head>
-<body>";
-
-    let end = "
-</body>
-</html>
-        ";
-
-	fs::write(HTML_PATH, output).expect("couldnt write to file");
+	fs::write(args.html_path, output).expect("couldnt write to file");
 }
 
 fn parse_tags(tags: Vec<Tag>) -> String {
@@ -107,7 +97,7 @@ fn read_file(path: &str) -> String {
 
 fn parse_markdown(md_path: &str) -> Vec<Tag> {
 	let mut tags: Vec<Tag> = Vec::new();
-	let lines = read_file(MD_PATH);
+	let lines = read_file(md_path);
 	let lines = lines.lines().map(|line| line.to_owned());
 
 	for line in lines {
@@ -136,9 +126,8 @@ fn parse_markdown(md_path: &str) -> Vec<Tag> {
 					},
 					'-' => tags.push(Tag::UnorderedListItem { text }),
 					thingy if ('0'..'9').any(|n| &n == thingy) => {
-						let (number, _) = start.split_at(start.find(".").unwrap());
 						tags.push(Tag::OrderedListItem { text });
-					},
+                    }
 
 					// this is an error waiting to happen. i do not want to fix it.
 					// post test: the error happened. i have to fix it.
@@ -152,7 +141,7 @@ fn parse_markdown(md_path: &str) -> Vec<Tag> {
 		}
 	}
 
-	return tags;
+	tags
 }
 
 fn header(chars: &mut std::iter::Peekable<std::str::Chars>, text: String) -> Tag {
@@ -231,4 +220,12 @@ pub mod tests {
 			assert_eq!(number, 6)
 		}
 	}
+}
+#[derive(Parser)]
+struct Args {
+    #[clap(long, short)]
+    html_path: String,
+
+    #[clap(long, short)]
+    md_path: String,
 }

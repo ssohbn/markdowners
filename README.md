@@ -1,16 +1,18 @@
-# Stuff
-Markdowners is an awesome attempt at a Markdown parser for a school project
+# STUFF
+Markdowners is an awesome Markdown parser for a school project
 
-It aims to take a simple Markdown file and parse it into HTML, so I don't have to write HTML for my school project.
+It takes a simple Markdown file and turn it to html tags, so I can write less HTML for my school project.
 
-# Usage
-this doesn't work, but it will be like: 
-	markdowners md-file-path html-file-path
+# USAGE:
+    markdowners --html-path <HTML_PATH> --md-path <MD_PATH>
 
-# Things I'm trying to support
-[ ] bold text
-[ ] italic text
-[ ] italic  and also bold text
-[ ] links
-[ ] images
+# OPTIONS:
+    -h, --html-path <HTML_PATH>    
+        --help                     Print help information
+    -m, --md-path <MD_PATH>
 
+# Stuff that would be cool that I do not have
+- [ ] Bold
+- [ ] Italic
+- [ ] Italic-bold
+- ^^ these checkboxes
