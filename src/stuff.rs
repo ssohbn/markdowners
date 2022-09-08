@@ -1,7 +1,9 @@
 use regex::Regex;
 use clap::Parser;
 
-pub fn do_magic(md_path: &str) -> String {
+
+/// call this if u wanna do the um progrma library style wahoo this is like the whole thing
+pub fn markdown_to_html(md_path: &str) -> String {
     let file_content = read_file(md_path);
     let tags = parse_markdown(file_content);
     let output = parse_tags(tags);

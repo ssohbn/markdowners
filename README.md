@@ -6,6 +6,8 @@ It takes a simple Markdown file and turn it to html tags, so I can write less HT
 # USAGE:
     markdowners --html-path <HTML_PATH> --md-path <MD_PATH>
 
+	it can also be used as a library i think u do the uhh markdown_2_Html thing u look up in docs idc
+
 # OPTIONS:
     -h, --html-path <HTML_PATH>    
         --help                     Print help information
