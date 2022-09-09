@@ -1,7 +1,5 @@
 //! stuff
 
-
-
 use clap::Parser;
 mod stuff;
 use stuff::{
