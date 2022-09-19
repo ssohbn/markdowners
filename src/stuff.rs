@@ -1,7 +1,6 @@
 use regex::Regex;
 use clap::Parser;
 
-
 /// call this if u wanna do the um progrma library style wahoo this is like the whole thing
 pub fn markdown_to_html(md_path: &str) -> String {
     let file_content = read_file(md_path);
@@ -11,6 +10,7 @@ pub fn markdown_to_html(md_path: &str) -> String {
 }
 
 pub fn read_file(path: &str) -> String {
+    println!("{}", &path);
 	let contents = std::fs::read_to_string(path).expect("couldnt read file");
 	contents
 }
