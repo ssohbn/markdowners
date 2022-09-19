@@ -1,8 +1,8 @@
 //! stuff
 
 use clap::Parser;
-mod stuff;
-use stuff::{
+mod lib; 
+use lib::{
     Args,
     markdown_to_html,
 };
